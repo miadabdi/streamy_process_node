@@ -4,17 +4,14 @@ import { spawn } from 'child_process';
 import { join } from 'path';
 import handleProgress from '../common/helpers/handle-progress';
 import ffprobeVideoInfo from '../common/services/ffprobe-video-info';
-import { ProducerService } from '../queue/producer.service';
+
+const ffmpegPath = join(__dirname, '../../binaries/ffmpeg');
 
 @Injectable()
 export class VideoProcessService {
 	private logger = new Logger(VideoProcessService.name);
-	private videoFilesDir = join(__dirname, 'videoFiles');
 
-	constructor(
-		private configService: ConfigService,
-		private producerService: ProducerService,
-	) {}
+	constructor(private configService: ConfigService) {}
 
 	async onModuleInit() {}
 
@@ -33,7 +30,7 @@ export class VideoProcessService {
 
 		return new Promise((resolve, reject) => {
 			// creating spawn
-			const command = spawn(`nice -n ${niceness} ffmpeg`, [args], {
+			const command = spawn(`nice -n ${niceness} ${ffmpegPath}`, [args], {
 				shell: true,
 				cwd: dedicatedDir,
 			});

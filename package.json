@@ -29,7 +29,6 @@
 		"@nestjs/swagger": "^7.3.1",
 		"amqp-connection-manager": "^4.1.14",
 		"amqplib": "^0.10.4",
-		"ffmpeg-static": "^5.2.0",
 		"fluent-ffmpeg": "^2.1.2",
 		"joi": "^17.12.3",
 		"moment": "^2.30.1",
