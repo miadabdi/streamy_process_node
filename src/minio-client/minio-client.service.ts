@@ -9,6 +9,7 @@ import moment from 'moment';
 import { MinioService } from 'nestjs-minio-client';
 import { basename, dirname, join } from 'path';
 import { BUCKETS, BUCKET_NAMES_TYPE } from '../common/constants';
+import { IFile } from '../common/interfaces/file.interface';
 
 @Injectable()
 export class MinioClientService {
@@ -96,7 +97,7 @@ export class MinioClientService {
 	}
 
 	async putObject(
-		file: Express.Multer.File,
+		file: IFile,
 		directory: string,
 		bucketName: BUCKET_NAMES_TYPE,
 		contentType?: string,
@@ -105,7 +106,7 @@ export class MinioClientService {
 
 		if (!bucket) {
 			this.logger.error(
-				`Error putting object into bucker ${bucketName}, filename: ${file.filename}, mimetype: ${file.mimetype}`,
+				`Error putting object into bucker ${bucketName}, mimetype: ${file.mimetype}`,
 			);
 			throw new InternalServerErrorException('Error uploading file');
 		}

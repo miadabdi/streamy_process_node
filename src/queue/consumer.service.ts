@@ -1,6 +1,7 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import amqp, { ChannelWrapper } from 'amqp-connection-manager';
+import * as amqplib from 'amqplib';
 import { RMQ_QUEUES_TYPE } from '../common/constants';
 
 @Injectable()
@@ -17,6 +18,10 @@ export class ConsumerService implements OnModuleInit {
 		this.channelWrapper = connection.createChannel();
 	}
 
+	async ackMsg(message: amqplib.Message) {
+		this.channelWrapper.ack(message);
+	}
+
 	async listenOnQueue(queue: RMQ_QUEUES_TYPE, callback: (content: any) => Promise<any>) {
 		try {
 			this.logger.log(`Setup consumer for queue ${queue}`);
@@ -30,7 +35,7 @@ export class ConsumerService implements OnModuleInit {
 
 							await callback(content);
 
-							this.channelWrapper.ack(message);
+							// this.ackMsg(message);
 						} catch (err) {
 							this.logger.error(`Error on consuming queue ${queue} `);
 							this.logger.error(err);

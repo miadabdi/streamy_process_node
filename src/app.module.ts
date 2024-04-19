@@ -5,6 +5,7 @@ import { ConfigModuleSetup } from './externalModules';
 import { LoggerModule } from './logger/logger.module';
 import { MinioClientModule } from './minio-client/minio-client.module';
 import { QueueModule } from './queue/queue.module';
+import { VideoModule } from './video/video.module';
 
 @Module({
 	imports: [
@@ -12,6 +13,7 @@ import { QueueModule } from './queue/queue.module';
 		MinioClientModule,
 		LoggerModule,
 		QueueModule,
+		VideoModule,
 		ClsModule.forRoot({
 			global: true,
 			middleware: {

@@ -2,7 +2,7 @@ export const APP_NAME = 'streamy_process_node';
 export const API_PREFIX = 'api';
 export const ROUTE_TIMEOUT = 30000;
 
-export const RMQ_QUEUES = ['q.video.process'] as const;
+export const RMQ_QUEUES = ['q.video.process', 'q.video.status'] as const;
 export type RMQ_QUEUES_TYPE = (typeof RMQ_QUEUES)[number];
 
 export const BUCKETS = [

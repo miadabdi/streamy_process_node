@@ -1,3 +1,5 @@
+import { BUCKET_NAMES_TYPE } from '../../common/constants';
+
 export interface SubProcessMsg {
 	id: number;
 	langRFC5646: string;
@@ -11,7 +13,7 @@ export interface SubProcessMsg {
 export interface VideoProcessMsg {
 	videoId: number;
 	fileId: number;
-	bucketName: string;
+	bucketName: BUCKET_NAMES_TYPE;
 	filePath: string;
 	sizeInByte: number;
 	mimetype: string;
