@@ -5,7 +5,7 @@ export interface SubProcessMsg {
 	langRFC5646: string;
 	fileId: number;
 	filePath: string;
-	bucketName: string;
+	bucketName: BUCKET_NAMES_TYPE;
 	sizeInByte: number;
 	mimetype: string;
 }

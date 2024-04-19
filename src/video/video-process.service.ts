@@ -143,4 +143,50 @@ export class VideoProcessService {
 
 		// command.run();
 	}
+
+	async processSubtitle(
+		videoFilePath: string,
+		subFilePath: string,
+		dedicatedDir: string,
+		lang: string,
+	) {
+		const threadsCount = this.configService.get<number>('FFMPEG_THREAD_COUNT');
+		const niceness = this.configService.get<number>('FFMPEG_NICENESS');
+		const args = `-hide_banner  -threads ${threadsCount} -loglevel info -y -i ${videoFilePath} -i ${subFilePath} -c:v copy  -c:s webvtt  -map 0:v  -map 1:s -f hls -hls_flags +independent_segments+program_date_time+single_file -hls_time 6 -hls_playlist_type vod -hls_subtitle_path sub_vtt_%v.m3u8 -hls_segment_type mpegts -var_stream_map 'v:0,s:0,name:English,sgroup:subtitle,language:' -hls_segment_filename 'redundant_%v.ts' sub_vtt_%v.m3u8`;
+		let logs = '';
+
+		return new Promise((resolve, reject) => {
+			// creating spawn
+			const command = spawn(`nice -n ${niceness} ${ffmpegPath}`, [args], {
+				shell: true,
+				cwd: dedicatedDir,
+			});
+
+			command.stderr.on('data', (data) => {
+				logs = logs + data;
+			});
+
+			command.stdout.on('data', (data) => {
+				// stdout is reserved for media streams
+				// meaning logs would be output to stderr alongside errors
+				// console.log(`stdout: ${data}`);
+			});
+
+			command.on('close', (code) => {
+				// error should be determined by code
+				if (code == 0) {
+					console.log(`child process closed with code ${code}`);
+					resolve(code);
+				} else {
+					console.log(`child process closed with code ${code}`);
+					reject({ code, logs });
+				}
+			});
+
+			command.on('error', (err) => {
+				// console.log(err);
+				// this event is not called on error
+			});
+		});
+	}
 }
