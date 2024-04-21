@@ -148,11 +148,11 @@ export class VideoProcessService {
 		videoFilePath: string,
 		subFilePath: string,
 		dedicatedDir: string,
-		lang: string,
+		langCode: string,
 	) {
 		const threadsCount = this.configService.get<number>('FFMPEG_THREAD_COUNT');
 		const niceness = this.configService.get<number>('FFMPEG_NICENESS');
-		const args = `-hide_banner  -threads ${threadsCount} -loglevel info -y -i ${videoFilePath} -i ${subFilePath} -c:v copy  -c:s webvtt  -map 0:v  -map 1:s -f hls -hls_flags +independent_segments+program_date_time+single_file -hls_time 6 -hls_playlist_type vod -hls_subtitle_path sub_vtt_%v.m3u8 -hls_segment_type mpegts -var_stream_map 'v:0,s:0,name:English,sgroup:subtitle,language:' -hls_segment_filename 'redundant_%v.ts' sub_vtt_%v.m3u8`;
+		const args = `-hide_banner  -threads ${threadsCount} -loglevel info -y -i ${videoFilePath} -i ${subFilePath} -c:v copy -c:s webvtt  -map 0:v  -map 1:s -f hls -hls_time 6 -hls_playlist_type vod -hls_subtitle_path sub_vtt_%v.m3u8 -hls_segment_type mpegts -var_stream_map 'v:0,s:0,name:${langCode},sgroup:subtitle' -hls_segment_filename 'redundant_%v_%04d.ts' sub_vtt_%v.m3u8`;
 		let logs = '';
 
 		return new Promise((resolve, reject) => {

@@ -1,14 +1,15 @@
+import * as m3u8Parser from '@miadabdi/m3u8-parser';
 import { Injectable, Logger } from '@nestjs/common';
 import { existsSync, mkdirSync } from 'fs';
-import { readdir, rm } from 'fs/promises';
+import { readFile, readdir, rm, writeFile } from 'fs/promises';
 import { join } from 'path';
-import { BUCKET_NAMES_TYPE } from '../common/constants';
+import { BUCKET_NAMES_TYPE, RFC5646_LANGUAGE_TAGS } from '../common/constants';
 import { MinioClientService } from '../minio-client/minio-client.service';
 import { ConsumerService } from '../queue/consumer.service';
 import { ProducerService } from '../queue/producer.service';
 import { VideoProcessingStatus } from './enum';
 import { SetVideoStatusMsg } from './interface';
-import { VideoProcessMsg } from './interface/video-process-msg.interface';
+import { SubProcessMsg, VideoProcessMsg } from './interface/video-process-msg.interface';
 import { VideoProcessService } from './video-process.service';
 
 @Injectable()
@@ -85,13 +86,19 @@ export class VideoService {
 				message.videoId.toString(),
 			);
 
+			const langCode = sub.langRFC5646;
+			// this would result into this sub file name
+			const subFileName = `sub_vtt_${langCode}.m3u8`;
+
 			try {
 				await this.videoProcessService.processSubtitle(
 					videoFilePath,
 					subFilePath,
 					dedicatedDir,
-					sub.langRFC5646,
+					langCode,
 				);
+
+				await this.addSubToMaster(dedicatedDir, sub, subFileName);
 			} catch (err: any) {
 				let logs = 'no message';
 				if (err.logs) logs = err.logs;
@@ -103,17 +110,90 @@ export class VideoService {
 					logs,
 				} as SetVideoStatusMsg);
 
+				this.logger.error(err);
+
 				return;
 			}
 		}
 
 		await this.moveFilesToMinio(dedicatedDir, message.videoId.toString());
-		await this.removeDirectory(dedicatedDir);
+		// await this.removeDirectory(dedicatedDir);
 
 		this.producerService.addToQueue('q.set.video.status', {
 			videoId: message.videoId,
 			status: VideoProcessingStatus.done,
 		} as SetVideoStatusMsg);
+	}
+
+	async correctSubM3U8(dedicatedDir: string, subFileName: string) {
+		// FFMPEG would put redundant video m3u8 and vtt m3u8 into the same file
+		// we should remove redundant video m3u8
+
+		const subPath = join(dedicatedDir, subFileName);
+
+		let subData: string;
+		try {
+			subData = await readFile(subPath, { encoding: 'utf8' });
+		} catch (err) {
+			this.logger.error('Error in opening sub m3u8 file', err, { subPath });
+		}
+
+		const searchText = '#EXT-X-ENDLIST';
+		subData = subData.substring(0, subData.indexOf(searchText)) + searchText;
+
+		try {
+			await writeFile(subPath, subData, {
+				encoding: 'utf8',
+			});
+		} catch (err) {
+			this.logger.error('Error in writing sub m3u8 file', err, { subPath });
+		}
+	}
+
+	async addSubToMaster(dedicatedDir: string, subMessage: SubProcessMsg, subFileName: string) {
+		await this.correctSubM3U8(dedicatedDir, subFileName);
+
+		const masterFilePath = join(dedicatedDir, 'master.m3u8');
+		let masterData;
+		try {
+			masterData = await readFile(masterFilePath, { encoding: 'utf8' });
+		} catch (err) {
+			this.logger.error('Error in opening master file', err, { masterFilePath });
+		}
+
+		// loading m3u8 master to parser
+		const parser = new m3u8Parser.Parser();
+		parser.push(masterData);
+		parser.end();
+
+		const langName = RFC5646_LANGUAGE_TAGS[subMessage.langRFC5646];
+
+		// group name subtitle0 is hardcoded. changing this may cause errors
+		const subtitles = parser.manifest.mediaGroups.SUBTITLES.subtitles || {};
+		subtitles[langName] = {
+			default: false,
+			autoselect: false,
+			forced: false,
+			language: subMessage.langRFC5646,
+			uri: subFileName,
+		};
+
+		// there will be only one subtitle group and it is called 'subtitles'
+		parser.manifest.mediaGroups.SUBTITLES.subtitles = subtitles;
+
+		parser.manifest.playlists = parser.manifest.playlists.map((playlist) => {
+			// adding subtitle group to every variant in the master file
+			playlist.attributes.SUBTITLES = 'subtitles';
+			return playlist;
+		});
+
+		try {
+			await writeFile(masterFilePath, parser.stringify(), {
+				encoding: 'utf8',
+			});
+		} catch (err) {
+			this.logger.error('Error in writing master file', err, { masterFilePath });
+		}
 	}
 
 	async moveFilesToMinio(dedicatedDir: string, minioDir: string) {
