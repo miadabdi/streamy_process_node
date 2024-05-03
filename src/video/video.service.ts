@@ -117,7 +117,7 @@ export class VideoService {
 		}
 
 		await this.moveFilesToMinio(dedicatedDir, message.videoId.toString());
-		// await this.removeDirectory(dedicatedDir);
+		await this.removeDirectory(dedicatedDir);
 
 		this.producerService.addToQueue('q.set.video.status', {
 			videoId: message.videoId,
