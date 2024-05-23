@@ -1,5 +1,5 @@
 import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
-import { OnPublishDto } from './dto/on-publish.dto';
+import { OnPlayDto, OnPublishDto, OnStopDto, OnUnpublishDto } from './dto';
 import { LiveService } from './live.service';
 
 @Controller('live')
@@ -14,19 +14,19 @@ export class LiveController {
 
 	@HttpCode(HttpStatus.OK)
 	@Post('/on_unpublish')
-	srsOnUnpublish(@Body() srsOnUnpublishDto: any) {
+	srsOnUnpublish(@Body() srsOnUnpublishDto: OnUnpublishDto) {
 		return this.liveService.srsOnUnpublish(srsOnUnpublishDto);
 	}
 
 	@HttpCode(HttpStatus.OK)
 	@Post('/on_play')
-	srsOnPlay(@Body() srsOnPlayDto: any) {
+	srsOnPlay(@Body() srsOnPlayDto: OnPlayDto) {
 		return this.liveService.srsOnPlay(srsOnPlayDto);
 	}
 
 	@HttpCode(HttpStatus.OK)
 	@Post('/on_stop')
-	srsOnStop(@Body() srsOnStopDto: any) {
+	srsOnStop(@Body() srsOnStopDto: OnStopDto) {
 		return this.liveService.srsOnStop(srsOnStopDto);
 	}
 }

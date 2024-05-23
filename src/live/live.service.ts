@@ -1,5 +1,5 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
-import { OnPublishDto } from './dto/on-publish.dto';
+import { OnPlayDto, OnPublishDto, OnStopDto, OnUnpublishDto } from './dto';
 
 @Injectable()
 export class LiveService {
@@ -12,17 +12,17 @@ export class LiveService {
 		return { code: 0 };
 	}
 
-	srsOnUnpublish(srsOnUnpublishDto: any) {
+	srsOnUnpublish(srsOnUnpublishDto: OnUnpublishDto) {
 		console.dir(srsOnUnpublishDto, { depth: null });
 		return { code: 0 };
 	}
 
-	srsOnPlay(srsOnPlayDto: any) {
+	srsOnPlay(srsOnPlayDto: OnPlayDto) {
 		console.dir(srsOnPlayDto, { depth: null });
 		return { code: 0 };
 	}
 
-	srsOnStop(srsOnStopDto: any) {
+	srsOnStop(srsOnStopDto: OnStopDto) {
 		console.dir(srsOnStopDto, { depth: null });
 		return { code: 0 };
 	}
