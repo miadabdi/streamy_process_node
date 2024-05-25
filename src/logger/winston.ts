@@ -26,8 +26,12 @@ const transports = {
 			winston.format.errors({ stack: true }),
 			winston.format.splat(),
 			winston.format((info) => {
-				info.requestId = info.context.requestId;
-				info.context = info.context.context;
+				if (info.context && typeof info.context !== 'string') {
+					console.log(info.context);
+					info.requestId = info.context.requestId;
+					info.context = info.context.context;
+				}
+
 				return info;
 			})(),
 			winston.format.json({}),
@@ -43,8 +47,12 @@ const transports = {
 			winston.format.errors({ stack: true }),
 			winston.format.splat(),
 			winston.format((info) => {
-				info.requestId = info.context.requestId;
-				info.context = info.context.context;
+				if (info.context && typeof info.context !== 'string') {
+					console.log(info.context);
+					info.requestId = info.context.requestId;
+					info.context = info.context.context;
+				}
+
 				return info;
 			})(),
 			winston.format.json(),

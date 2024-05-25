@@ -8,6 +8,6 @@ import { VideoService } from './video.service';
 	imports: [QueueModule, MinioClientModule],
 	controllers: [],
 	providers: [VideoService, VideoProcessService],
-	exports: [],
+	exports: [VideoProcessService],
 })
 export class VideoModule {}
