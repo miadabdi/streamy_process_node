@@ -35,7 +35,7 @@ export class ConsumerService implements OnModuleInit {
 
 							await callback(content);
 
-							// this.ackMsg(message);
+							this.ackMsg(message);
 						} catch (err) {
 							this.logger.error(`Error on consuming queue ${queue} `);
 							this.logger.error(err);
