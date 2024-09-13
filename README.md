@@ -46,10 +46,11 @@ sudo docker compose up -d
 
 ### Step 3: Install Packages and Run the Application
 
-Install the necessary packages:
+Installing dependencies:
 
 ```bash
-npm install
+chmod 755 setup.sh
+./setup.sh
 ```
 
 Start the application:
