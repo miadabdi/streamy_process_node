@@ -59,7 +59,7 @@ Start the application:
 npm start
 ```
 
-The application will be available on the port specified in the `app.env` file. You can route traffic to the app using Nginx.
+The application will be available on the port specified in the `.env` file. You can route traffic to the app using Nginx.
 
 # Details of video processing
 
