@@ -11,7 +11,7 @@ echo Download completed
 echo extracting...
 tar -xJf ffmpeg-6.0.1-amd64-static.tar.xz --overwrite
 cp -rf ./ffmpeg-6.0.1-amd64-static/* ./binaries
-rmdir -rf ffmpeg-6.0.1-amd64-static
+rm -rf ffmpeg-6.0.1-amd64-static
 
 echo Deleting tar file 
 rm ffmpeg-6.0.1-amd64-static.tar.xz

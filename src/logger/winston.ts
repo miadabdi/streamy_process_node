@@ -4,6 +4,24 @@ import winstonDailyRotateFile from 'winston-daily-rotate-file';
 import { APP_NAME } from '../common/constants';
 import { nestLikeConsoleFormat } from './nest-like-console-format';
 
+const stripNestContext = winston.format((info) => {
+	const context = info.context;
+	if (context && typeof context === 'object') {
+		const { requestId, context: contextLabel } = context as Record<string, unknown>;
+		if (requestId != null) {
+			info.requestId = String(requestId);
+		}
+		if (typeof contextLabel === 'string') {
+			info.context = contextLabel;
+		} else {
+			delete info.context;
+		}
+	} else if (context == null) {
+		delete info.context;
+	}
+	return info;
+});
+
 const transports = {
 	console: new winston.transports.Console({
 		level: 'silly',
@@ -25,15 +43,7 @@ const transports = {
 			winston.format.timestamp(),
 			winston.format.errors({ stack: true }),
 			winston.format.splat(),
-			winston.format((info) => {
-				if (info.context && typeof info.context !== 'string') {
-					console.log(info.context);
-					info.requestId = info.context.requestId;
-					info.context = info.context.context;
-				}
-
-				return info;
-			})(),
+			stripNestContext(),
 			winston.format.json({}),
 		),
 	}),
@@ -46,15 +56,7 @@ const transports = {
 			winston.format.timestamp(),
 			winston.format.errors({ stack: true }),
 			winston.format.splat(),
-			winston.format((info) => {
-				if (info.context && typeof info.context !== 'string') {
-					console.log(info.context);
-					info.requestId = info.context.requestId;
-					info.context = info.context.context;
-				}
-
-				return info;
-			})(),
+			stripNestContext(),
 			winston.format.json(),
 		),
 	}),
