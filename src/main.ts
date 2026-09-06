@@ -1,8 +1,9 @@
 import { Logger, ValidationPipe, VersioningType } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
-import { API_PREFIX } from './common/constants';
+import { API_PREFIX, APP_NAME } from './common/constants';
 import { LoggerService } from './logger/logger.service';
 
 async function bootstrap() {
@@ -28,6 +29,14 @@ async function bootstrap() {
 			whitelist: true,
 		}),
 	);
+
+	const swaggerConfig = new DocumentBuilder()
+		.setTitle(APP_NAME)
+		.setDescription('streamy process node (ffmpeg worker) health and status api')
+		.setVersion('0.1')
+		.build();
+	const document = SwaggerModule.createDocument(app, swaggerConfig);
+	SwaggerModule.setup(API_PREFIX, app, document);
 
 	const port = configService.get<number>('PORT');
 	await app.listen(port);

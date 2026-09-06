@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ClsModule } from 'nestjs-cls';
 import { v4 as uuidv4 } from 'uuid';
 import { ConfigModuleSetup } from './externalModules';
+import { HealthModule } from './health/health.module';
 import { LoggerModule } from './logger/logger.module';
 import { MinioClientModule } from './minio-client/minio-client.module';
 import { QueueModule } from './queue/queue.module';
@@ -15,6 +16,7 @@ import { LiveModule } from './live/live.module';
 		LoggerModule,
 		QueueModule,
 		VideoModule,
+		HealthModule,
 		ClsModule.forRoot({
 			global: true,
 			middleware: {

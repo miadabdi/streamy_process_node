@@ -1,0 +1,60 @@
+import { Test } from '@nestjs/testing';
+import { ConsumerService } from '../queue/consumer.service';
+import { MinioClientService } from '../minio-client/minio-client.service';
+import { VideoService } from '../video/video.service';
+import { HealthController } from './health.controller';
+
+describe('HealthController', () => {
+	let controller: HealthController;
+	let isConnected: jest.Mock;
+	let isAvailable: jest.Mock;
+
+	beforeEach(async () => {
+		isConnected = jest.fn();
+		isAvailable = jest.fn();
+
+		const moduleRef = await Test.createTestingModule({
+			controllers: [HealthController],
+			providers: [
+				{ provide: ConsumerService, useValue: { isConnected } },
+				{ provide: MinioClientService, useValue: { isAvailable } },
+				{ provide: VideoService, useValue: { activeJob: null } },
+			],
+		}).compile();
+		controller = moduleRef.get(HealthController);
+	});
+
+	it('liveness reports ok and uptime with zero external io', () => {
+		const result = controller.liveness();
+
+		expect(result.status).toBe('ok');
+		expect(typeof result.uptime).toBe('number');
+	});
+
+	it('readiness reports rmq and storage down when dependencies are unavailable', async () => {
+		isConnected.mockReturnValue(false);
+		isAvailable.mockResolvedValue(false);
+
+		const result = await controller.readiness();
+
+		expect(result).toEqual({ rmq: false, storage: false, activeJob: null });
+	});
+
+	it('readiness reports dependencies up and the active job', async () => {
+		isConnected.mockReturnValue(true);
+		isAvailable.mockResolvedValue(true);
+		const activeJob = { videoId: 7, startedAt: '2026-09-07T00:00:00.000Z' };
+		const moduleRef = await Test.createTestingModule({
+			controllers: [HealthController],
+			providers: [
+				{ provide: ConsumerService, useValue: { isConnected } },
+				{ provide: MinioClientService, useValue: { isAvailable } },
+				{ provide: VideoService, useValue: { activeJob } },
+			],
+		}).compile();
+
+		const result = await moduleRef.get(HealthController).readiness();
+
+		expect(result).toEqual({ rmq: true, storage: true, activeJob });
+	});
+});

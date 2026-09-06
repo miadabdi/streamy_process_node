@@ -50,7 +50,19 @@ export class VideoService {
 		return { localfilepath, dedicatedDir };
 	}
 
+	/** current in-flight job, exposed by the health endpoint */
+	activeJob: { videoId: number; startedAt: string } | null = null;
+
 	async processVideoCallback(message: VideoProcessMsg) {
+		this.activeJob = { videoId: message.videoId, startedAt: new Date().toISOString() };
+		try {
+			await this.processVideo(message);
+		} finally {
+			this.activeJob = null;
+		}
+	}
+
+	private async processVideo(message: VideoProcessMsg) {
 		console.dir(message, { depth: null });
 		const { localfilepath: videoFilePath, dedicatedDir } = await this.downloadMinioFile(
 			message.bucketName,
