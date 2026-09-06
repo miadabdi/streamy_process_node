@@ -14,8 +14,8 @@ The [Streamy Process Node](https://github.com/miadabdi/streamy_process_node) tak
 
 Video Uploads:
 
-1. When a new video is uploaded, Streamy sends a message to the Process Node containing the video details.
-2. The Process Node downloads the video from Minio.
+1. When a video is confirmed uploaded, Streamy sends a message to the Process Node containing the video details.
+2. The Process Node downloads the video from object storage (SeaweedFS S3 gateway).
 3. It then processes and transcodes the video into HLS (HTTP Live Streaming) format.
 
 Live Streaming:
@@ -25,41 +25,47 @@ Live Streaming:
 
 This separation of concerns ensures that user interactions remain responsive, while the heavy lifting of video processing is handled efficiently by dedicated nodes.
 
-## Installation
+## Running
 
-There is a docker compose file in the project, to use it you must already have docker installed.
+Two supported ways:
 
-### Step 1: Configure Environment Variables
+### Option A: as part of the Streamy stack (recommended)
 
-1. Rename `app.env.example` to `app.env` and `.env.example` to `.env`.
-2. Fill out the .env and app.env files with the required environment variables. Descriptions for each variable are provided within the files.
-   - .env is used by the Docker Compose file.
-   - app.env is the primary environment file used by the application.
+The worker runs as the `process_node` service in the [Streamy](https://github.com/miadabdi/streamy) repo's `docker-compose-dev.yml` / `docker-compose-prod.yml`, with the build context pointing at this repo cloned side by side (`../streamy_process_node`). One `docker compose up` in the streamy repo brings up the API, the worker, RabbitMQ, SeaweedFS, Postgres and Elasticsearch together. Inside the container ffmpeg/ffprobe come from the distro package (`FFMPEG_PATH=ffmpeg`).
 
-### Step 2: Start up dependencies
-
-Run the Docker Compose file to start up the necessary dependencies:
-
-```
-sudo docker compose up -d
-```
-
-### Step 3: Install Packages and Run the Application
-
-Installing dependencies:
+### Option B: bare metal
 
 ```bash
 chmod 755 setup.sh
-./setup.sh
+./setup.sh   # downloads static ffmpeg/ffprobe into binaries/ and runs npm install
+cp .env.example .env   # then fill in RMQ_URL, MINIO_* pointing at your SeaweedFS/MinIO-compatible gateway
+npm run start:dev
 ```
 
-Start the application:
+`binaries/` is gitignored; `setup.sh` re-fetches it (amd64 linux only).
 
-```bash
-npm start
-```
+### Environment variables
 
-The application will be available on the port specified in the `.env` file. You can route traffic to the app using Nginx.
+| Variable | Description |
+| --- | --- |
+| `NODE_ENV` | development / production |
+| `PORT` | HTTP port (default 3001) — health endpoints only |
+| `MINIO_ENDPOINT`, `MINIO_PORT`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY` | SeaweedFS S3 gateway address and credentials |
+| `RMQ_URL` | RabbitMQ connection string |
+| `FFMPEG_PATH`, `FFPROBE_PATH` | override binary locations (default `<cwd>/binaries/`) |
+| `FFMPEG_THREAD_COUNT` | threads per ffmpeg process (default 8) |
+| `FFMPEG_NICENESS`, `FFMPEG_LIVE_NICENESS` | nice values for VOD / live transcoding |
+
+## HTTP surface
+
+The worker exposes health endpoints only (documented in Swagger at `/api`):
+
+- `GET /api/v1/health/liveness` — process uptime, zero external IO (compose healthcheck target)
+- `GET /api/v1/health/readiness` — RabbitMQ connection state, storage probe, current in-flight job
+
+## Queue contract
+
+Consumes `q.video.process` and `q.live.process`; publishes status transitions on `q.set.video.status`. All queues are declared with a dead-letter exchange (`dlx`); messages whose handler throws are nacked (no requeue) and land on `q.dead_letter` for inspection. Domain failures (failed transcodes) are reported via `q.set.video.status` as `failed_in_processing` with ffmpeg logs, not via the DLQ.
 
 # Details of video processing
 
