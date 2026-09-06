@@ -16,7 +16,10 @@ export const ConfigModuleSetup = ConfigModule.forRoot({
 		MINIO_ACCESS_KEY: Joi.string().min(1).required(),
 		MINIO_SECRET_KEY: Joi.string().min(1).required(),
 		RMQ_URL: Joi.string().min(1).required(),
+		FFMPEG_PATH: Joi.string().min(1).optional(),
+		FFPROBE_PATH: Joi.string().min(1).optional(),
 		FFMPEG_THREAD_COUNT: Joi.number().default(8),
 		FFMPEG_NICENESS: Joi.number().default(19),
+		FFMPEG_LIVE_NICENESS: Joi.number().default(0),
 	}),
 });

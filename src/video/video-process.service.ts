@@ -5,7 +5,9 @@ import { join } from 'path';
 import handleProgress from '../common/helpers/handle-progress';
 import ffprobeVideoInfo from '../common/services/ffprobe-video-info';
 
-const ffmpegPath = join(__dirname, '../../binaries/ffmpeg');
+// resolvable both under `nest start` (cwd = repo root) and `node dist/main`,
+// and overridable for containers where ffmpeg comes from the distro package
+const ffmpegPath = process.env.FFMPEG_PATH || join(process.cwd(), 'binaries', 'ffmpeg');
 
 @Injectable()
 export class VideoProcessService {
