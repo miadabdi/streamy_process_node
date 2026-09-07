@@ -2,7 +2,12 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import amqp, { AmqpConnectionManager, ChannelWrapper } from 'amqp-connection-manager';
 import * as amqplib from 'amqplib';
-import { RMQ_QUEUES_TYPE } from '../common/constants';
+import {
+	DEAD_LETTER_QUEUE,
+	DLX_EXCHANGE,
+	RMQ_QUEUES,
+	RMQ_QUEUES_TYPE,
+} from '@miadabdi/streamy-queues';
 
 @Injectable()
 export class ConsumerService {
@@ -52,7 +57,7 @@ export class ConsumerService {
 	private async assertQueue(channel: amqplib.ConfirmChannel, queue: RMQ_QUEUES_TYPE) {
 		await channel.assertQueue(queue, {
 			durable: true,
-			arguments: { 'x-dead-letter-exchange': 'dlx' },
+			arguments: { 'x-dead-letter-exchange': DLX_EXCHANGE },
 		});
 	}
 

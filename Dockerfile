@@ -57,6 +57,8 @@ USER node
 # Copy built application and package files from development stage
 COPY --chown=node:node --from=development /home/node/app/dist ./dist
 COPY --chown=node:node --from=development /home/node/app/package*.json ./
+# vendored @miadabdi/streamy-queues tarball needed by npm ci
+COPY --chown=node:node --from=development /home/node/app/vendor ./vendor
 
 # Install only production dependencies
 RUN npm ci --omit=dev && npm cache clean --force
