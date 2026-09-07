@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { existsSync, mkdirSync } from 'fs';
-import { rm } from 'fs/promises';
+import { readdir, rm } from 'fs/promises';
 import { join } from 'path';
 import { MinioClientService } from '../minio-client/minio-client.service';
 import { ConsumerService } from '../queue/consumer.service';
@@ -45,9 +45,10 @@ export class LiveService {
 			await new Promise((resolve) => setTimeout(resolve, 1000));
 
 			// upload segments while the broadcast runs so viewers can watch live
+			// (hls path uses the integer id, same convention as vod output)
 			const uploader = new LiveUploader(
 				dedicatedDir,
-				message.videoId.toString(),
+				message.id.toString(),
 				this.minioClientService.client,
 			);
 			const intervalMs = (this.configService.get<number>('LIVE_UPLOAD_INTERVAL') ?? 5) * 1000;
@@ -62,8 +63,24 @@ export class LiveService {
 			}, intervalMs);
 
 			try {
-				// resolves when the rtmp source ends and ffmpeg exits cleanly
-				await this.videoProcessService.processLiveVideo(rtmpUrl, dedicatedDir);
+				// attaching to srs before the publisher's source is established can
+				// land the pull on an empty source that never delivers data; if the
+				// pull dies with no output at all, retry a few seconds later
+				for (let attempt = 1; attempt <= 3; attempt++) {
+					try {
+						// resolves when the rtmp source ends and ffmpeg exits cleanly
+						await this.videoProcessService.processLiveVideo(rtmpUrl, dedicatedDir);
+						break;
+					} catch (err) {
+						const files = await readdir(dedicatedDir).catch(() => [] as string[]);
+						const producedOutput = files.some((f) => f.endsWith('.ts') || f.endsWith('.m3u8'));
+						if (producedOutput || attempt === 3) throw err;
+						this.logger.warn(
+							`live pull attempt ${attempt} for ${message.streamKey} got no data, retrying in 3s`,
+						);
+						await new Promise((resolve) => setTimeout(resolve, 3000));
+					}
+				}
 			} finally {
 				clearInterval(watcher);
 			}
@@ -87,7 +104,7 @@ export class LiveService {
 			try {
 				const uploader = new LiveUploader(
 					dedicatedDir,
-					message.videoId.toString(),
+					message.id.toString(),
 					this.minioClientService.client,
 				);
 				await uploader.flush();

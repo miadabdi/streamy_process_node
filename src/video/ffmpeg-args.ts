@@ -150,6 +150,10 @@ export function buildLiveArgs(rtmpInput: string, threads: number): string[] {
 		'-y',
 		'-threads',
 		String(threads),
+		// bound a stalled rtmp source: exit if no data arrives for 30s
+		// (srs can leave pull connections hanging after unpublish)
+		'-rw_timeout',
+		String(30_000_000),
 		'-i',
 		rtmpInput,
 		'-filter_complex',
