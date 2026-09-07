@@ -1,5 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { ConsumerService } from '../queue/consumer.service';
+import { DeadLetterService } from '../queue/dead-letter.service';
 import { MinioClientService } from '../minio-client/minio-client.service';
 import { VideoService } from '../video/video.service';
 import { HealthController } from './health.controller';
@@ -8,15 +9,18 @@ describe('HealthController', () => {
 	let controller: HealthController;
 	let isConnected: jest.Mock;
 	let isAvailable: jest.Mock;
+	let deadLetterCount: jest.Mock;
 
 	beforeEach(async () => {
 		isConnected = jest.fn();
 		isAvailable = jest.fn();
+		deadLetterCount = jest.fn().mockResolvedValue(0);
 
 		const moduleRef = await Test.createTestingModule({
 			controllers: [HealthController],
 			providers: [
 				{ provide: ConsumerService, useValue: { isConnected } },
+				{ provide: DeadLetterService, useValue: { count: deadLetterCount } },
 				{ provide: MinioClientService, useValue: { isAvailable } },
 				{ provide: VideoService, useValue: { activeJob: null } },
 			],
@@ -37,7 +41,7 @@ describe('HealthController', () => {
 
 		const result = await controller.readiness();
 
-		expect(result).toEqual({ rmq: false, storage: false, activeJob: null });
+		expect(result).toEqual({ rmq: false, storage: false, deadLetters: 0, activeJob: null });
 	});
 
 	it('readiness reports dependencies up and the active job', async () => {
@@ -48,6 +52,7 @@ describe('HealthController', () => {
 			controllers: [HealthController],
 			providers: [
 				{ provide: ConsumerService, useValue: { isConnected } },
+				{ provide: DeadLetterService, useValue: { count: deadLetterCount } },
 				{ provide: MinioClientService, useValue: { isAvailable } },
 				{ provide: VideoService, useValue: { activeJob } },
 			],
@@ -55,6 +60,6 @@ describe('HealthController', () => {
 
 		const result = await moduleRef.get(HealthController).readiness();
 
-		expect(result).toEqual({ rmq: true, storage: true, activeJob });
+		expect(result).toEqual({ rmq: true, storage: true, deadLetters: 0, activeJob });
 	});
 });
