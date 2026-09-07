@@ -3,6 +3,7 @@ import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { MinioClientService } from '../minio-client/minio-client.service';
 import { ConsumerService } from '../queue/consumer.service';
 import { DeadLetterService } from '../queue/dead-letter.service';
+import { VideoProcessService } from '../video/video-process.service';
 import { VideoService } from '../video/video.service';
 
 @ApiTags('health')
@@ -13,6 +14,7 @@ export class HealthController {
 		private deadLetterService: DeadLetterService,
 		private minioClientService: MinioClientService,
 		private videoService: VideoService,
+		private videoProcessService: VideoProcessService,
 	) {}
 
 	/** zero external io — must answer while rmq/storage are down */
@@ -32,6 +34,7 @@ export class HealthController {
 			rmq: this.consumerService.isConnected(),
 			storage: await this.minioClientService.isAvailable(),
 			deadLetters: await this.deadLetterService.count(),
+			encoder: this.videoProcessService.activeEncoder,
 			activeJob: this.videoService.activeJob,
 		};
 	}

@@ -11,6 +11,11 @@ export class VideoProcessService {
 	private logger = new Logger(VideoProcessService.name);
 	private plan: EncoderPlan = SOFTWARE_PLAN;
 
+	/** encoder chosen at boot, surfaced by the health endpoint */
+	get activeEncoder(): EncoderPlan['name'] {
+		return this.plan.name;
+	}
+
 	constructor(private configService: ConfigService) {}
 
 	async onModuleInit() {

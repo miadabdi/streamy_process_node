@@ -2,6 +2,7 @@ import { Test } from '@nestjs/testing';
 import { ConsumerService } from '../queue/consumer.service';
 import { DeadLetterService } from '../queue/dead-letter.service';
 import { MinioClientService } from '../minio-client/minio-client.service';
+import { VideoProcessService } from '../video/video-process.service';
 import { VideoService } from '../video/video.service';
 import { HealthController } from './health.controller';
 
@@ -23,6 +24,7 @@ describe('HealthController', () => {
 				{ provide: DeadLetterService, useValue: { count: deadLetterCount } },
 				{ provide: MinioClientService, useValue: { isAvailable } },
 				{ provide: VideoService, useValue: { activeJob: null } },
+				{ provide: VideoProcessService, useValue: { activeEncoder: 'h264_vaapi' } },
 			],
 		}).compile();
 		controller = moduleRef.get(HealthController);
@@ -41,7 +43,13 @@ describe('HealthController', () => {
 
 		const result = await controller.readiness();
 
-		expect(result).toEqual({ rmq: false, storage: false, deadLetters: 0, activeJob: null });
+		expect(result).toEqual({
+			rmq: false,
+			storage: false,
+			deadLetters: 0,
+			encoder: 'h264_vaapi',
+			activeJob: null,
+		});
 	});
 
 	it('readiness reports dependencies up and the active job', async () => {
@@ -55,11 +63,18 @@ describe('HealthController', () => {
 				{ provide: DeadLetterService, useValue: { count: deadLetterCount } },
 				{ provide: MinioClientService, useValue: { isAvailable } },
 				{ provide: VideoService, useValue: { activeJob } },
+				{ provide: VideoProcessService, useValue: { activeEncoder: 'h264_vaapi' } },
 			],
 		}).compile();
 
 		const result = await moduleRef.get(HealthController).readiness();
 
-		expect(result).toEqual({ rmq: true, storage: true, deadLetters: 0, activeJob });
+		expect(result).toEqual({
+			rmq: true,
+			storage: true,
+			deadLetters: 0,
+			encoder: 'h264_vaapi',
+			activeJob,
+		});
 	});
 });
