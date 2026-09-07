@@ -7,14 +7,14 @@ import { HealthController } from './health.controller';
 
 describe('HealthController', () => {
 	let controller: HealthController;
-	let isConnected: jest.Mock;
-	let isAvailable: jest.Mock;
-	let deadLetterCount: jest.Mock;
+	let isConnected: vi.Mock;
+	let isAvailable: vi.Mock;
+	let deadLetterCount: vi.Mock;
 
 	beforeEach(async () => {
-		isConnected = jest.fn();
-		isAvailable = jest.fn();
-		deadLetterCount = jest.fn().mockResolvedValue(0);
+		isConnected = vi.fn();
+		isAvailable = vi.fn();
+		deadLetterCount = vi.fn().mockResolvedValue(0);
 
 		const moduleRef = await Test.createTestingModule({
 			controllers: [HealthController],
