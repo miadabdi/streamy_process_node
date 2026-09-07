@@ -6,7 +6,7 @@
 ###################
 FROM debian:trixie-slim AS ffmpeg-builder
 
-ARG FFMPEG_VERSION=n8.1.2
+ARG FFMPEG_VERSION=8.1.2
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential nasm pkg-config git ca-certificates curl xz-utils \
@@ -24,6 +24,7 @@ RUN curl -fsSL https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.xz | tar
     && ./configure \
         --prefix=/ffmpeg \
         --disable-doc --disable-debug \
+        --disable-xlib --disable-libxcb --disable-sdl2 --disable-ffplay \
         --enable-gpl \
         --enable-libx264 \
         --enable-vaapi \
