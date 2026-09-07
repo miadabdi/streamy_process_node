@@ -41,7 +41,8 @@ FROM node:24-trixie-slim AS prepare
 # procps for `nice`, curl for healthchecks, libva + drivers so the
 # hardware encoders compiled above actually have devices to talk to
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        procps curl libva2 libvpl2 intel-media-va-driver i965-va-driver \
+        procps curl libva2 libva-drm2 libvpl2 libvdpau1 libx11-6 libx264-164 \
+        intel-media-va-driver i965-va-driver \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=ffmpeg-builder /ffmpeg /usr/local
