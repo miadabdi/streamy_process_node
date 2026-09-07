@@ -1,22 +1,26 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { spawn } from 'child_process';
-import { join } from 'path';
 import handleProgress from '../common/helpers/handle-progress';
 import ffprobeVideoInfo from '../common/services/ffprobe-video-info';
+import { EncoderPlan, SOFTWARE_PLAN, detectEncoderPlan, ffmpegPath } from './encoder-plan';
 import { buildLiveArgs, buildSubtitleArgs, buildVodArgs } from './ffmpeg-args';
-
-// resolvable both under `nest start` (cwd = repo root) and `node dist/main`,
-// and overridable for containers where ffmpeg comes from the distro package
-const ffmpegPath = process.env.FFMPEG_PATH || join(process.cwd(), 'binaries', 'ffmpeg');
 
 @Injectable()
 export class VideoProcessService {
 	private logger = new Logger(VideoProcessService.name);
+	private plan: EncoderPlan = SOFTWARE_PLAN;
 
 	constructor(private configService: ConfigService) {}
 
-	async onModuleInit() {}
+	async onModuleInit() {
+		this.plan = await detectEncoderPlan();
+		this.logger.log(
+			this.plan.hardware
+				? `hardware transcoding enabled: ${this.plan.name}`
+				: 'no working hardware encoder found, transcoding with libx264',
+		);
+	}
 
 	async processVideo(localfilepath: string, dedicatedDir: string) {
 		const info = await ffprobeVideoInfo(localfilepath);
@@ -26,7 +30,11 @@ export class VideoProcessService {
 		}
 		const nbFrames = Number(videoStream.nb_frames);
 
-		const args = buildVodArgs(localfilepath, this.configService.get<number>('FFMPEG_THREAD_COUNT'));
+		const args = buildVodArgs(
+			localfilepath,
+			this.configService.get<number>('FFMPEG_THREAD_COUNT'),
+			this.plan,
+		);
 		const niceness = this.configService.get<number>('FFMPEG_NICENESS');
 
 		// progress is parsed from the same stderr stream that captures logs
@@ -51,7 +59,11 @@ export class VideoProcessService {
 	}
 
 	async processLiveVideo(rtmpUrl: string, dedicatedDir: string) {
-		const args = buildLiveArgs(rtmpUrl, this.configService.get<number>('FFMPEG_THREAD_COUNT'));
+		const args = buildLiveArgs(
+			rtmpUrl,
+			this.configService.get<number>('FFMPEG_THREAD_COUNT'),
+			this.plan,
+		);
 		const niceness = this.configService.get<number>('FFMPEG_LIVE_NICENESS');
 
 		return this.run(args, dedicatedDir, niceness);

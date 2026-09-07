@@ -1,15 +1,17 @@
 /**
  * ffmpeg argument builders: each element is one argv entry, passed to
  * spawn WITHOUT a shell, so paths with spaces or shell metacharacters
- * are safe. values copied from the previously shell-interpolated
- * command strings (except the live bufsize arithmetic, now computed).
+ * are safe. the video codec block comes from the detected EncoderPlan
+ * (hardware encoder when one works, libx264 otherwise).
  */
 
-const THREE_VARIANT_FILTER =
-	'[0:v]fps=fps=30,split=3[v1][v2][v3];[v1]scale=width=-2:height=1080[1080p];[v2]scale=width=-2:height=720[720p];[v3]scale=width=-2:height=360[360p]';
+import { EncoderPlan } from './encoder-plan';
+
+const threeVariantFilter = (branchSuffix: string) =>
+	`[0:v]fps=fps=30,split=3[v1][v2][v3];[v1]scale=width=-2:height=1080${branchSuffix}[1080p];[v2]scale=width=-2:height=720${branchSuffix}[720p];[v3]scale=width=-2:height=360${branchSuffix}[360p]`;
 const THREE_VARIANT_STREAM_MAP = 'v:0,a:0,name:1080p v:1,a:1,name:720p v:2,a:2,name:360p';
 
-export function buildVodArgs(input: string, threads: number): string[] {
+export function buildVodArgs(input: string, threads: number, plan: EncoderPlan): string[] {
 	return [
 		'-hide_banner',
 		'-loglevel',
@@ -17,26 +19,12 @@ export function buildVodArgs(input: string, threads: number): string[] {
 		'-y',
 		'-threads',
 		String(threads),
+		...plan.inputArgs,
 		'-i',
 		input,
-		'-codec:v',
-		'libx264',
-		'-crf:v',
-		'23',
-		'-profile:v',
-		'high',
-		'-pix_fmt:v',
-		'yuv420p',
-		'-rc-lookahead:v',
-		'40',
-		'-force_key_frames:v',
-		'expr:gte(t,n_forced*2.000)',
-		'-preset:v',
-		'veryfast',
-		'-b-pyramid:v',
-		'strict',
 		'-filter_complex',
-		THREE_VARIANT_FILTER,
+		threeVariantFilter(plan.filterBranchSuffix),
+		...plan.vodArgs,
 		'-map',
 		'[1080p]',
 		'-maxrate:v:0',
@@ -142,7 +130,7 @@ export function buildSubtitleArgs(
 	];
 }
 
-export function buildLiveArgs(rtmpInput: string, threads: number): string[] {
+export function buildLiveArgs(rtmpInput: string, threads: number, plan: EncoderPlan): string[] {
 	return [
 		'-hide_banner',
 		'-loglevel',
@@ -154,26 +142,12 @@ export function buildLiveArgs(rtmpInput: string, threads: number): string[] {
 		// (srs can leave pull connections hanging after unpublish)
 		'-rw_timeout',
 		String(30_000_000),
+		...plan.inputArgs,
 		'-i',
 		rtmpInput,
 		'-filter_complex',
-		THREE_VARIANT_FILTER,
-		'-codec:v',
-		'libx264',
-		'-crf:v',
-		'23',
-		'-tune',
-		'zerolatency',
-		'-pix_fmt:v',
-		'yuv420p',
-		'-rc-lookahead:v',
-		'60',
-		'-force_key_frames:v',
-		'expr:gte(t,n_forced*2.000)',
-		'-preset:v',
-		'fast',
-		'-b-pyramid:v',
-		'strict',
+		threeVariantFilter(plan.filterBranchSuffix),
+		...plan.liveArgs,
 		'-map',
 		'[1080p]',
 		'-maxrate:v:0',
