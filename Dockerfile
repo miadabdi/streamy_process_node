@@ -1,11 +1,52 @@
 ###################
+# ffmpeg build stage
+# latest ffmpeg compiled with hardware acceleration: distro packages are
+# older and the johnvansickle static builds ship with NO hw encoders at
+# all, which would silently disable vaapi/qsv/nvenc transcoding
+###################
+FROM debian:trixie-slim AS ffmpeg-builder
+
+ARG FFMPEG_VERSION=n8.1.2
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential nasm pkg-config git ca-certificates curl xz-utils \
+        libx264-dev libva-dev libvpl-dev libvdpau-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# nvenc/nvdec headers are MIT and header-only; the proprietary nvidia
+# driver is dlopen'ed at runtime and simply fails the encoder probe when
+# absent, so this is safe on non-nvidia hosts
+RUN git clone --depth 1 https://git.videolan.org/git/ffmpeg/nv-codec-headers.git /tmp/nvch \
+    && make -C /tmp/nvch install
+
+RUN curl -fsSL https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.xz | tar -xJ -C /tmp \
+    && cd /tmp/ffmpeg-${FFMPEG_VERSION} \
+    && ./configure \
+        --prefix=/ffmpeg \
+        --disable-doc --disable-debug \
+        --enable-gpl \
+        --enable-libx264 \
+        --enable-vaapi \
+        --enable-libvpl \
+    && make -j"$(nproc)" \
+    && make install
+
+###################
 # Prepare Stage
 ###################
 
-FROM node:22.14.0-bookworm-slim AS prepare
+FROM node:24-trixie-slim AS prepare
 
-# ffmpeg/ffprobe for transcoding, procps for nice, curl for healthchecks
-RUN apt-get update && apt-get install -y ffmpeg procps curl && rm -rf /var/lib/apt/lists/*
+# procps for `nice`, curl for healthchecks, libva + drivers so the
+# hardware encoders compiled above actually have devices to talk to
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        procps curl libva2 libvpl2 intel-media-va-driver i965-va-driver \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=ffmpeg-builder /ffmpeg /usr/local
+
+ENV FFMPEG_PATH=/usr/local/bin/ffmpeg \
+    FFPROBE_PATH=/usr/local/bin/ffprobe
 
 # Set up working directory
 RUN mkdir -p /home/node/app/node_modules
@@ -47,9 +88,7 @@ EXPOSE 9229
 
 FROM prepare AS production
 
-ENV NODE_ENV=production \
-    FFMPEG_PATH=ffmpeg \
-    FFPROBE_PATH=ffprobe
+ENV NODE_ENV=production
 
 # Now we set proper ownership for production
 RUN chown -R node:node /home/node/app
