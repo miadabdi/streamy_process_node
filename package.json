@@ -19,7 +19,8 @@
 		"test": "vitest run",
 		"test:watch": "vitest",
 		"test:cov": "vitest run --coverage",
-		"prepare": "husky"
+		"prepare": "husky",
+		"verify": "npm run lint && npm run build && npm test"
 	},
 	"dependencies": {
 		"@miadabdi/m3u8-parser": "^7.1.1",
