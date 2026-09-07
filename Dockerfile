@@ -20,6 +20,9 @@ COPY package*.json ./
 
 FROM prepare AS development
 
+# Vendored @miadabdi/streamy-queues tarball needed by npm install
+COPY vendor ./vendor
+
 # Install all dependencies (including devDependencies)
 # Run as root to avoid permission issues with mounted volumes
 RUN npm install
