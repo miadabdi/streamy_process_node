@@ -16,6 +16,8 @@ export const ConfigModuleSetup = ConfigModule.forRoot({
 		MINIO_ACCESS_KEY: Joi.string().min(1).required(),
 		MINIO_SECRET_KEY: Joi.string().min(1).required(),
 		RMQ_URL: Joi.string().min(1).required(),
+		SRS_RTMP_HOST: Joi.string().min(1).default('localhost'),
+		LIVE_UPLOAD_INTERVAL: Joi.number().min(1).default(5),
 		FFMPEG_PATH: Joi.string().min(1).optional(),
 		FFPROBE_PATH: Joi.string().min(1).optional(),
 		FFMPEG_THREAD_COUNT: Joi.number().default(8),
