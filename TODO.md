@@ -5,7 +5,8 @@ This is the ffmpeg worker of the [Streamy](https://github.com/miadabdi/streamy) 
 ### Todo
 
 - [ ] complete tests
-- [ ] live encode runs ~0.5x realtime on weak hardware, so the end-of-stream tail can lag minutes behind; a lighter preset or hardware encode would close the gap
+- [ ] docker hub image workflows need DOCKER_USERNAME/DOCKER_PASSWORD secrets on the repo
+- [x] hardware-first transcoding (vaapi/nvenc/qsv probe with software fallback) — closes the encode-tail lag on machines with a working gpu
 - [ ] implement log aggregation
 - [ ] transcode progress is parsed from ffmpeg stderr but only logged locally; consider reporting it via `q.set.video.status`
 
