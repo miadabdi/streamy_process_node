@@ -35,7 +35,7 @@ export class VideoService {
 		}
 	}
 
-	async downloadMinioFile(bucket: BUCKET_NAMES_TYPE, filePath: string, dirName: string) {
+	async downloadMinioFile(bucket: string, filePath: string, dirName: string) {
 		const dedicatedDir = join(this.videoFilesDir, dirName);
 		const localfilepath = join(dedicatedDir, filePath);
 
