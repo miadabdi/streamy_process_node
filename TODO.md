@@ -5,7 +5,7 @@ This is the ffmpeg worker of the [Streamy](https://github.com/miadabdi/streamy) 
 ### Todo
 
 - [ ] complete tests
-- [ ] live hls is only uploaded when the stream ends (replay); serving segments during a live broadcast needs continuous upload
+- [ ] live encode runs ~0.5x realtime on weak hardware, so the end-of-stream tail can lag minutes behind; a lighter preset or hardware encode would close the gap
 - [ ] implement log aggregation
 - [ ] transcode progress is parsed from ffmpeg stderr but only logged locally; consider reporting it via `q.set.video.status`
 
@@ -18,4 +18,6 @@ This is the ffmpeg worker of the [Streamy](https://github.com/miadabdi/streamy) 
 - [x] resolve ffmpeg/ffprobe from env (FFMPEG_PATH/FFPROBE_PATH) — prod builds no longer break
 - [x] ffmpeg spawned with an argument array (no shell); live bufsize arithmetic computed
 - [x] end-of-stream handling: recording uploaded as a replay, local files cleaned, done status published
+- [x] live hls uploaded continuously during the broadcast (LiveUploader); viewers play hls/<id>/master.m3u8 while the stream runs
+- [x] srs in the compose stack with on_publish/on_unpublish hooks; empty-pull retry + rw_timeout stall guard
 - [x] queue names come from the shared @miadabdi/streamy-queues package (vendored tarball)
