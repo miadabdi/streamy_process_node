@@ -23,7 +23,7 @@
 		"verify": "npm run lint && npm run build && npm test"
 	},
 	"dependencies": {
-		"@miadabdi/m3u8-parser": "^7.1.1",
+		"@miadabdi/m3u8-parser": "^7.5.1",
 		"@miadabdi/streamy-queues": "file:vendor/miadabdi-streamy-queues-0.0.2.tgz",
 		"@nestjs/common": "^11.2.3",
 		"@nestjs/config": "^4.0.4",
