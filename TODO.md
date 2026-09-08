@@ -1,3 +1,5 @@
+> Deprecated: development continues in the streamy monorepo (apps/worker).
+
 # Streamy Process Node
 
 This is the ffmpeg worker of the [Streamy](https://github.com/miadabdi/streamy) video-sharing platform.

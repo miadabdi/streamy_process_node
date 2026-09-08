@@ -1,3 +1,9 @@
+> [!WARNING]
+> **This repository is deprecated and archived.**
+> The process node now lives in the [streamy monorepo](https://github.com/miadabdi/streamy)
+> at `apps/worker`. This repo's full git history was merged there — nothing was lost.
+> All development, issues and CI happen in the monorepo from here on.
+
 # Streamy Process Node
 
 This is a process node for [Streamy](https://github.com/miadabdi/streamy). The purpose of a dedicated process node is to allow any number of processing nodes to run on separate servers, decoupling these tasks from user request handling.
